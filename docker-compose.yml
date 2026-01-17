@@ -1,0 +1,32 @@
+services:
+  webserver:
+    image: nginx:alpine
+    container_name: basic_webserver
+    ports:
+      - "80:80"       # Your Website
+      - "8080:8080"   # Your Dashboard
+    volumes:
+      - ./html:/usr/share/nginx/html
+      - ./logs:/var/log/nginx
+      # Shared volume for the report
+      - ./report:/usr/share/nginx/report:ro
+      # Add a tiny custom config to Nginx to serve the report on 8080
+      - ./nginx_dashboard.conf:/etc/nginx/conf.d/dashboard.conf:ro
+
+  logviewer:
+    image: allinurl/goaccess
+    container_name: log_viewer
+    volumes:
+      - ./logs:/var/log/nginx:ro
+      - ./report:/srv:rw
+      - ./geoip:/var/lib/geoip:ro
+    command: >
+      /var/log/nginx/access.log
+      --log-format=COMBINED
+      --real-time-html
+      --addr=0.0.0.0
+      --port=7890
+      --output=/srv/index.html
+      --geoip-database=/var/lib/geoip/GeoLite2-City.mmdb
+    ports:
+      - "7890:7890" # WebSocket Port
